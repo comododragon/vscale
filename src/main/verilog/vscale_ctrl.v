@@ -4,6 +4,10 @@
 `include "vscale_csr_addr_map.vh"
 `include "vscale_md_constants.vh"
 
+`ifdef XVEC
+`include "xvec/xvec_defines.vh"
+`endif
+
 module vscale_ctrl(
                    input                              clk,
                    input                              reset,
@@ -50,6 +54,11 @@ module vscale_ctrl(
                    output wire                        exception_WB,
                    output wire [`ECODE_WIDTH-1:0]     exception_code_WB,
                    output wire                        retire_WB
+`ifdef XVEC
+                   ,
+                   output reg                         xvec_mode_DX,
+                   output reg                         xvec_mode_WB
+`endif
                    );
 
    // IF stage ctrl pipeline registers
@@ -222,6 +231,9 @@ module vscale_ctrl(
       wb_src_sel_DX = `WB_SRC_ALU;
       uses_md_unkilled = 1'b0;
       wfi_unkilled_DX = 1'b0;
+`ifdef XVEC
+      xvec_mode_DX = 1'b0;
+`endif
       case (opcode)
         `RV32_LOAD : begin
            dmem_en_unkilled = 1'b1;
@@ -279,11 +291,23 @@ module vscale_ctrl(
              default : illegal_instruction = 1'b1;
            endcase // case (funct3)
         end
+`ifndef XVEC
         `RV32_OP_IMM : begin
+`else
+        `RV32_OP_IMM, `XVEC_OP_IMM : begin
+`endif
            alu_op = alu_op_arith;
            wr_reg_unkilled_DX = 1'b1;
+`ifdef XVEC
+           if(`XVEC_OP_IMM == opcode)
+              xvec_mode_DX = 1'b1;
+`endif
         end
+`ifndef XVEC
         `RV32_OP  : begin
+`else
+        `RV32_OP, `XVEC_OP : begin
+`endif
            uses_rs2 = 1'b1;
            src_b_sel = `SRC_B_RS2;
            alu_op = alu_op_arith;
@@ -292,6 +316,10 @@ module vscale_ctrl(
               uses_md_unkilled = 1'b1;
               wb_src_sel_DX = `WB_SRC_MD;
            end
+`ifdef XVEC
+           if(`XVEC_OP == opcode)
+              xvec_mode_DX = 1'b1;
+`endif
         end
         `RV32_SYSTEM : begin
            wb_src_sel_DX = `WB_SRC_CSR;
@@ -340,7 +368,11 @@ module vscale_ctrl(
       endcase // case (opcode)
    end // always @ (*)
 
+`ifndef XVEC
    assign add_or_sub = ((opcode == `RV32_OP) && (funct7[5])) ? `ALU_OP_SUB : `ALU_OP_ADD;
+`else
+   assign add_or_sub = ((opcode == `RV32_OP || opcode == `XVEC_OP) && (funct7[5])) ? `ALU_OP_SUB : `ALU_OP_ADD;
+`endif
    assign srl_or_sra = (funct7[5]) ? `ALU_OP_SRA : `ALU_OP_SRL;
 
    assign md_req_valid = uses_md;
@@ -441,6 +473,10 @@ module vscale_ctrl(
          dmem_en_WB <= 0;
          uses_md_WB <= 0;
 	 wfi_unkilled_WB <= 0;
+// TODO: Precisa memo?
+`ifdef XVEC
+         xvec_mode_WB <= 0;
+`endif
       end else if (!stall_WB) begin
          prev_killed_WB <= killed_DX;
          had_ex_WB <= ex_DX;
@@ -448,6 +484,9 @@ module vscale_ctrl(
          wb_src_sel_WB <= wb_src_sel_DX;
          prev_ex_code_WB <= ex_code_DX;
          reg_to_wr_WB <= reg_to_wr_DX;
+`ifdef XVEC
+         xvec_mode_WB <= xvec_mode_DX;
+`endif
          store_in_WB <= dmem_wen;
          dmem_en_WB <= dmem_en;
          uses_md_WB <= uses_md;

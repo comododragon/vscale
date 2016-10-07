@@ -5,6 +5,10 @@
 `include "vscale_md_constants.vh"
 `include "vscale_platform_constants.vh"
 
+`ifdef XVEC
+`include "xvec/xvec_defines.vh"
+`endif
+
 module vscale_pipeline(
                        input 			    clk,
 		       input [`N_EXT_INTS-1:0] 	    ext_interrupts, 
@@ -86,15 +90,28 @@ module vscale_pipeline(
    wire [`SRC_A_SEL_WIDTH-1:0]                  src_a_sel;
    wire [`SRC_B_SEL_WIDTH-1:0]                  src_b_sel;
    wire [`REG_ADDR_WIDTH-1:0]                   rs1_addr;
+   wire [`REG_ADDR_WIDTH-1:0]                   rs2_addr;
+`ifndef XVEC
    wire [`XPR_LEN-1:0]                          rs1_data;
    wire [`XPR_LEN-1:0]                          rs1_data_bypassed;
-   wire [`REG_ADDR_WIDTH-1:0]                   rs2_addr;
    wire [`XPR_LEN-1:0]                          rs2_data;
    wire [`XPR_LEN-1:0]                          rs2_data_bypassed;
+`else
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        rs1_data;
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        rs1_data_bypassed;
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        rs2_data;
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        rs2_data_bypassed;
+`endif
    wire [`ALU_OP_WIDTH-1:0]                     alu_op;
+`ifndef XVEC
    wire [`XPR_LEN-1:0]                          alu_src_a;
    wire [`XPR_LEN-1:0]                          alu_src_b;
    wire [`XPR_LEN-1:0]                          alu_out;
+`else
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        alu_src_a;
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        alu_src_b;
+   wire [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]        alu_out;
+`endif
    wire                                         cmp_true;
    wire                                         bypass_rs1;
    wire                                         bypass_rs2;
@@ -110,15 +127,27 @@ module vscale_pipeline(
    wire [`XPR_LEN-1:0]                          md_resp_result;
 
    reg [`XPR_LEN-1:0]                           PC_WB;
+`ifndef XVEC
    reg [`XPR_LEN-1:0]                           alu_out_WB;
+`else
+   reg [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]         alu_out_WB;
+`endif
    reg [`XPR_LEN-1:0]                           csr_rdata_WB;
    reg [`XPR_LEN-1:0]                           store_data_WB;
 
    wire                                         kill_WB;
    wire                                         stall_WB;
+`ifndef XVEC
    reg [`XPR_LEN-1:0]                           bypass_data_WB;
+`else
+   reg [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]         bypass_data_WB;
+`endif
    wire [`XPR_LEN-1:0]                          load_data_WB;
+`ifndef XVEC
    reg [`XPR_LEN-1:0]                           wb_data_WB;
+`else
+   reg [(`XVEC_VEC_LEN * `XPR_LEN)-1:0]         wb_data_WB;
+`endif
    wire [`REG_ADDR_WIDTH-1:0]                   reg_to_wr_WB;
    wire                                         wr_reg_WB;
    wire [`WB_SRC_SEL_WIDTH-1:0]                 wb_src_sel_WB;
@@ -140,6 +169,11 @@ module vscale_pipeline(
    wire [`XPR_LEN-1:0]                          handler_PC;
    wire                                         eret;
    wire [`XPR_LEN-1:0]                          epc;
+
+`ifdef XVEC
+   wire                                         xvec_mode_DX;
+   wire                                         xvec_mode_WB;
+`endif
 
    vscale_ctrl ctrl(
                     .clk(clk),
@@ -187,13 +221,22 @@ module vscale_pipeline(
 		    .interrupt_taken(interrupt_taken),
                     .prv(prv),
                     .eret(eret)
+`ifdef XVEC
+                    ,
+                    .xvec_mode_DX(xvec_mode_DX),
+                    .xvec_mode_WB(xvec_mode_WB)
+`endif
                     );
 
 
    vscale_PC_mux PCmux(
                        .PC_src_sel(PC_src_sel),
                        .inst_DX(inst_DX),
+`ifndef XVEC
                        .rs1_data(rs1_data_bypassed),
+`else
+                       .rs1_data(rs1_data_bypassed[`XPR_LEN-1:0]),
+`endif
                        .PC_IF(PC_IF),
                        .PC_DX(PC_DX),
                        .handler_PC(handler_PC),
@@ -228,7 +271,13 @@ module vscale_pipeline(
    assign rs1_addr = inst_DX[19:15];
    assign rs2_addr = inst_DX[24:20];
 
+`ifndef XVEC
    vscale_regfile regfile(
+`else
+   vscale_regfile_xvec regfile(
+                          .xvec_mode_DX(xvec_mode_DX),
+                          .xvec_mode_WB(xvec_mode_WB),
+`endif
                           .clk(clk),
                           .ra1(rs1_addr),
                           .rd1(rs1_data),
@@ -244,15 +293,22 @@ module vscale_pipeline(
                           .imm_type(imm_type),
                           .imm(imm)
                           );
-
+`ifndef XVEC
    vscale_src_a_mux src_a_mux(
+`else
+   vscale_src_a_mux_xvec src_a_mux(
+`endif
                               .src_a_sel(src_a_sel),
                               .PC_DX(PC_DX),
                               .rs1_data(rs1_data_bypassed),
                               .alu_src_a(alu_src_a)
                               );
 
+`ifndef XVEC
    vscale_src_b_mux src_b_mux(
+`else
+   vscale_src_b_mux_xvec src_b_mux(
+`endif
                               .src_b_sel(src_b_sel),
                               .imm(imm),
                               .rs2_data(rs2_data_bypassed),
@@ -262,11 +318,19 @@ module vscale_pipeline(
    assign rs1_data_bypassed = bypass_rs1 ? bypass_data_WB : rs1_data;
    assign rs2_data_bypassed = bypass_rs2 ? bypass_data_WB : rs2_data;
 
+`ifndef XVEC
    vscale_alu alu(
+`else
+   vscale_alu_xvec alu(
+`endif
                   .op(alu_op),
                   .in1(alu_src_a),
                   .in2(alu_src_b),
                   .out(alu_out)
+`ifdef XVEC
+                  ,
+                  .xvec_mode(xvec_mode_DX)
+`endif
                   );
 
    vscale_mul_div md(
@@ -278,17 +342,24 @@ module vscale_pipeline(
                      .req_in_2_signed(md_req_in_2_signed),
                      .req_out_sel(md_req_out_sel),
                      .req_op(md_req_op),
+`ifndef XVEC
                      .req_in_1(rs1_data_bypassed),
                      .req_in_2(rs2_data_bypassed),
+`else
+                     .req_in_1(rs1_data_bypassed[`XPR_LEN-1:0]),
+                     .req_in_2(rs2_data_bypassed[`XPR_LEN-1:0]),
+`endif
                      .resp_valid(md_resp_valid),
                      .resp_result(md_resp_result)
                      );
 
-
    assign cmp_true = alu_out[0];
 
-
+`ifndef XVEC
    assign dmem_addr = alu_out;
+`else
+   assign dmem_addr = alu_out[`XPR_LEN-1:0];
+`endif
 
    always @(posedge clk) begin
       if (reset) begin
@@ -299,7 +370,11 @@ module vscale_pipeline(
 `endif
       end else if (~stall_WB) begin
          PC_WB <= PC_DX;
+`ifndef XVEC
          store_data_WB <= rs2_data_bypassed;
+`else
+         store_data_WB <= rs2_data_bypassed[`XPR_LEN-1:0];
+`endif
          alu_out_WB <= alu_out;
          csr_rdata_WB <= csr_rdata;
          dmem_type_WB <= dmem_type;
@@ -309,32 +384,51 @@ module vscale_pipeline(
 
    always @(*) begin
       case (wb_src_sel_WB)
+`ifndef XVEC
         `WB_SRC_CSR : bypass_data_WB = csr_rdata_WB;
         `WB_SRC_MD : bypass_data_WB = md_resp_result;
+`else
+        `WB_SRC_CSR : bypass_data_WB = {`XVEC_NORM_BITS_REM'h0, csr_rdata_WB};
+        `WB_SRC_MD : bypass_data_WB = {`XVEC_NORM_BITS_REM'h0, md_resp_result};
+`endif
         default : bypass_data_WB = alu_out_WB;
       endcase // case (wb_src_sel_WB)
    end
 
+`ifndef XVEC
    assign load_data_WB = load_data(alu_out_WB,dmem_rdata,dmem_type_WB);
+`else
+   assign load_data_WB = load_data(alu_out_WB[`XPR_LEN-1:0],dmem_rdata,dmem_type_WB);
+`endif
 
    always @(*) begin
       case (wb_src_sel_WB)
         `WB_SRC_ALU : wb_data_WB = bypass_data_WB;
+`ifndef XVEC
         `WB_SRC_MEM : wb_data_WB = load_data_WB;
+`else
+        `WB_SRC_MEM : wb_data_WB = {`XVEC_NORM_BITS_REM'h0, load_data_WB};
+`endif
         `WB_SRC_CSR : wb_data_WB = bypass_data_WB;
         `WB_SRC_MD : wb_data_WB = bypass_data_WB;
         default : wb_data_WB = bypass_data_WB;
       endcase
    end
 
-
+`ifndef XVEC
    assign dmem_wdata_delayed = store_data(alu_out_WB,store_data_WB,dmem_type_WB);
-
+`else
+   assign dmem_wdata_delayed = store_data(alu_out_WB[`XPR_LEN-1:0],store_data_WB,dmem_type_WB);
+`endif
 
    // CSR
 
    assign csr_addr = inst_DX[31:20];
+`ifndef XVEC
    assign csr_wdata = (csr_imm_sel) ? inst_DX[19:15] : rs1_data_bypassed;
+`else
+   assign csr_wdata = (csr_imm_sel) ? inst_DX[19:15] : rs1_data_bypassed[`XPR_LEN-1:0];
+`endif
 
    vscale_csr_file csr(
                        .clk(clk),
@@ -349,7 +443,11 @@ module vscale_pipeline(
                        .retire(retire_WB),
                        .exception(exception_WB),
                        .exception_code(exception_code_WB),
+`ifndef XVEC
                        .exception_load_addr(alu_out_WB),
+`else
+                       .exception_load_addr(alu_out_WB[`XPR_LEN-1:0]),
+`endif
                        .exception_PC(PC_WB),
                        .epc(epc),
                        .eret(eret),
