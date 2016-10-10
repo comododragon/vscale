@@ -441,11 +441,11 @@ module vscale_ctrl (
 	end
 
 `ifndef XVEC
-	assign add_or_sub = ((opcode == `RV32_OP) && (funct7[5])) ? `ALU_OP_SUB : `ALU_OP_ADD;
+	assign add_or_sub = ((opcode == `RV32_OP) && (funct7[5]))? `ALU_OP_SUB : `ALU_OP_ADD;
 `else
-	assign add_or_sub = ((opcode == `RV32_OP || opcode == `XVEC_OP) && (funct7[5])) ? `ALU_OP_SUB : `ALU_OP_ADD;
+	assign add_or_sub = ((opcode == `RV32_OP || opcode == `XVEC_OP) && (funct7[5]))? `ALU_OP_SUB : `ALU_OP_ADD;
 `endif
-	assign srl_or_sra = (funct7[5]) ? `ALU_OP_SRA : `ALU_OP_SRL;
+	assign srl_or_sra = (funct7[5])? `ALU_OP_SRA : `ALU_OP_SRL;
 
 	assign md_req_valid = uses_md;
 

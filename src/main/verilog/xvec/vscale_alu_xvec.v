@@ -35,7 +35,17 @@ module vscale_alu_xvec (
 	assign shamt = win2[0][`SHAMT_WIDTH-1:0];
 
 	integer i;
-	always @(op, in1, in2, shamt) begin
+	// TODO: ARGH THIS IS SO UGLY PLEASE FIX IT
+	always @(op, shamt,
+				win1[0], win1[1], win1[2], win1[3], win1[4], win1[5], win1[6], win1[7],
+				win1[8], win1[9], win1[10], win1[11], win1[12], win1[13], win1[14], win1[15],
+				win1[16], win1[17], win1[18], win1[19], win1[20], win1[21], win1[22], win1[23],
+				win1[24], win1[25], win1[26], win1[27], win1[28], win1[29], win1[30], win1[31],
+				win2[0], win2[1], win2[2], win2[3], win2[4], win2[5], win2[6], win2[7],
+				win2[8], win2[9], win2[10], win2[11], win2[12], win2[13], win2[14], win2[15],
+				win2[16], win2[17], win2[18], win2[19], win2[20], win2[21], win2[22], win2[23],
+				win2[24], win2[25], win2[26], win2[27], win2[28], win2[29], win2[30], win2[31]
+			) begin
 		case(op)
 			`ALU_OP_ADD:
 				begin

@@ -2,7 +2,7 @@
 `include "vscale_ctrl_constants.vh"
 `include "rv32_opcodes.vh"
 
-module vscale_mul_div(
+module vscale_mul_div (
 		clk,
 		reset,
 		req_valid,
@@ -60,7 +60,7 @@ module vscale_mul_div(
 		input [`XPR_LEN-1:0] data;
 		input is_signed;
 		begin
-			abs_input = (data[`XPR_LEN-1] == 1'b1 && is_signed) ? -data : data;
+			abs_input = (data[`XPR_LEN-1] == 1'b1 && is_signed)? -data : data;
 		end
 	endfunction
 
@@ -129,7 +129,7 @@ module vscale_mul_div(
 		  		end
 			s_setup_output:
 				begin
-					result <= {`XPR_LEN'b0,final_result};
+					result <= {`XPR_LEN'b0, final_result};
 				end
 		endcase
 	end

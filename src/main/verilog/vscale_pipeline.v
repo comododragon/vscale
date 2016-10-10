@@ -409,7 +409,6 @@ module vscale_pipeline (
 		end
 	end
 
-
 	always @(*) begin
 		case(wb_src_sel_WB)
 `ifndef XVEC
@@ -424,9 +423,9 @@ module vscale_pipeline (
 	end
 
 `ifndef XVEC
-	assign load_data_WB = load_data(alu_out_WB,dmem_rdata,dmem_type_WB);
+	assign load_data_WB = load_data(alu_out_WB, dmem_rdata, dmem_type_WB);
 `else
-	assign load_data_WB = load_data(alu_out_WB[`XPR_LEN-1:0],dmem_rdata,dmem_type_WB);
+	assign load_data_WB = load_data(alu_out_WB[`XPR_LEN-1:0], dmem_rdata, dmem_type_WB);
 `endif
 
 	always @(*) begin
@@ -439,14 +438,14 @@ module vscale_pipeline (
 `endif
 			`WB_SRC_CSR: wb_data_WB = bypass_data_WB;
 			`WB_SRC_MD: wb_data_WB = bypass_data_WB;
-			default : wb_data_WB = bypass_data_WB;
+			default: wb_data_WB = bypass_data_WB;
 		endcase
 	end
 
 `ifndef XVEC
-	assign dmem_wdata_delayed = store_data(alu_out_WB,store_data_WB,dmem_type_WB);
+	assign dmem_wdata_delayed = store_data(alu_out_WB, store_data_WB, dmem_type_WB);
 `else
-	assign dmem_wdata_delayed = store_data(alu_out_WB[`XPR_LEN-1:0],store_data_WB,dmem_type_WB);
+	assign dmem_wdata_delayed = store_data(alu_out_WB[`XPR_LEN-1:0], store_data_WB, dmem_type_WB);
 `endif
 
 	// CSR
