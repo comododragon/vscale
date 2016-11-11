@@ -54,6 +54,25 @@ make sim/XvecVScaleHexTb
 * **example.hex:** Example input file. Check section **Description of Hex File** for further details;
 * **example.vcd:** Waveform file (use e.g. GtkWave to interpret it).
 
+## Using the V-Scale Compiler (vsc)
+
+The V-Scale Compiler (vsc) is an utility bundled with this project (in very preliminar phase) that
+enables converting from plain C source codes directly to Hex files, readable by the simulator.
+There are some prerequisites, however:
+
+* ```python3``` must be installed;
+* ```riscv-gnu-toolchain``` (https://github.com/riscv/riscv-gnu-toolchain) and ```riscv-llvm```
+	(https://github.com/riscv/riscv-llvm) must be compiled, installed and on ```PATH```;
+* C source codes should make no use of external libraries (e.g. ```stdio.h```).
+
+To use it, simply:
+
+```
+python3 vsc.py CFILE HEXFILE
+```
+
+Where ```CFILE```is the C source code and ```HEXFILE``` the destination hex file.
+
 ## Description of Hex File
 
 Hex files used as initial memory are described as:
