@@ -114,27 +114,22 @@ module vscale_hex_tb();
 
 	initial begin
 		if(!$value$plusargs("max-cycles=%d", max_cycles)) begin
-			$fdisplay(`STDERR, ">> FAILED: No max-cycles specified");
-			$finish;
+			max_cycles = 1000;
 		end
 		if(!$value$plusargs("loadmem=%s", loadmem)) begin
 			$fdisplay(`STDERR, ">> FAILED: No loadmem specified");
 			$finish;
 		end
-		if(!$value$plusargs("vpdfile=%s", vpdfile)) begin
-			$fdisplay(`STDERR, ">> FAILED *** No vpdfile specified");
-			$finish;
+		if($value$plusargs("vpdfile=%s", vpdfile)) begin
+			$dumpfile(vpdfile);
+			$dumpvars(1, DUT);
 		end
-		if(loadmem) begin
-			$readmemh(loadmem, hexfile);
-			for(i = 0; i < hexfile_words; i = i + 1) begin
-				for(j = 0; j < 4; j = j + 1) begin
-					DUT.hasti_mem.mem[4 * i + j] = hexfile[i][32 * j +: 32];
-				end
+		$readmemh(loadmem, hexfile);
+		for(i = 0; i < hexfile_words; i = i + 1) begin
+			for(j = 0; j < 4; j = j + 1) begin
+				DUT.hasti_mem.mem[4 * i + j] = hexfile[i][32 * j +: 32];
 			end
 		end
-		$dumpfile(vpdfile);
-		$dumpvars(1, DUT);
 		#100 reset = 0;
 	end
 

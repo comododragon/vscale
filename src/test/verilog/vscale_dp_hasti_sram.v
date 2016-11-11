@@ -92,20 +92,24 @@ module vscale_dp_hasti_sram (
 			if(p0_state == s_w2) begin
 				p0_wdata <= p0_hwdata;
 				p0_state <= s_w1;
+				if(p0_wvalid) begin
+					mem[p0_word_waddr] <= (mem[p0_word_waddr] & ~p0_wmask) | (p0_hwdata & p0_wmask);
+				end
 			end
 			if(p0_htrans == `HASTI_TRANS_NONSEQ) begin
 				if(p0_hwrite) begin
 					p0_waddr <= p0_haddr;
 					p0_wsize <= p0_hsize;
 					p0_wvalid <= 1'b1;
-					if(p0_wvalid) begin
-						mem[p0_word_waddr] <= (mem[p0_word_waddr] & ~p0_wmask) | (p0_wdata & p0_wmask);
-					end
 					p0_state <= s_w2;
 				end
 				else begin
 					p0_bypass <= p0_wvalid && p0_word_waddr == p0_raddr;
 				end
+			end
+			// TODO: Burst is not implemented. Therefore p0_wvalid may be resetted here
+			else begin
+				p0_wvalid <= 1'b0;
 			end
 		end
 	end
