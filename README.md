@@ -130,7 +130,7 @@ Xvec has two opcodes, ```XVEC_OP``` and ```XVEC_OP_IMM```, which has the same st
 	  imm     vs1     ALU     vd   0101011
 
 	[31:25] [ 24:20 ] [19:15] [14:12] [11:7] [ 6:0 ]
-	0M00000   shamt     vs1     ALU     vd   0001011
+	0M00000   shamt     vs1     ALU     vd   0101011
 	```
 
 Refer to the RISC-V specification for further info.
