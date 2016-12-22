@@ -1,5 +1,5 @@
 OUTPUT_ARCH( "riscv" )
-ENTRY( main )
+ENTRY( _start )
 SECTIONS
 {
  /* text: test code section */

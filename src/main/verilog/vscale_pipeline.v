@@ -415,8 +415,8 @@ module vscale_pipeline (
 			`WB_SRC_CSR: bypass_data_WB = csr_rdata_WB;
 			`WB_SRC_MD: bypass_data_WB = md_resp_result;
 `else
-			`WB_SRC_CSR: bypass_data_WB = {`XVEC_NORM_BITS_REM'h0, csr_rdata_WB};
-			`WB_SRC_MD: bypass_data_WB = {`XVEC_NORM_BITS_REM'h0, md_resp_result};
+			`WB_SRC_CSR: bypass_data_WB = {{`XVEC_NORM_BITS_REM{1'b0}}, csr_rdata_WB};
+			`WB_SRC_MD: bypass_data_WB = {{`XVEC_NORM_BITS_REM{1'b0}}, md_resp_result};
 `endif
 			default: bypass_data_WB = alu_out_WB;
 		endcase
@@ -434,7 +434,7 @@ module vscale_pipeline (
 `ifndef XVEC
 			`WB_SRC_MEM: wb_data_WB = load_data_WB;
 `else
-			`WB_SRC_MEM: wb_data_WB = {`XVEC_NORM_BITS_REM'h0, load_data_WB};
+			`WB_SRC_MEM: wb_data_WB = {{`XVEC_NORM_BITS_REM{1'b0}}, load_data_WB};
 `endif
 			`WB_SRC_CSR: wb_data_WB = bypass_data_WB;
 			`WB_SRC_MD: wb_data_WB = bypass_data_WB;

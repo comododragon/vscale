@@ -12,8 +12,8 @@ module vscale_src_a_mux_xvec (
 
 	input [`SRC_A_SEL_WIDTH-1:0] src_a_sel;
 	input [`XPR_LEN-1:0] PC_DX;
-	input [(32 * `XPR_LEN)-1:0] rs1_data;
-	output reg [(32 * `XPR_LEN)-1:0] alu_src_a;
+	input [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] rs1_data;
+	output reg [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] alu_src_a;
 
 	always @(*) begin
 		case(src_a_sel)
@@ -22,7 +22,7 @@ module vscale_src_a_mux_xvec (
 					alu_src_a = rs1_data;
 				end
 			`SRC_A_PC:
-				alu_src_a = {`XVEC_NORM_BITS_REM'h0, PC_DX};
+				alu_src_a = {{`XVEC_NORM_BITS_REM{1'b0}}, PC_DX};
 			default:
 				alu_src_a = 'h0;
 		endcase

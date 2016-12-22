@@ -17,12 +17,12 @@ module vscale_regfile_xvec (
 
 	input clk;
 	input [`REG_ADDR_WIDTH-1:0] ra1;
-	output [(32 * `XPR_LEN)-1:0] rd1;
+	output [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] rd1;
 	input [`REG_ADDR_WIDTH-1:0] ra2;
-	output [(32 * `XPR_LEN)-1:0] rd2;
+	output [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] rd2;
 	input wen;
 	input [`REG_ADDR_WIDTH-1:0] wa;
-	input [(32 * `XPR_LEN)-1:0] wd;
+	input [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] wd;
 	input xvec_mode_DX;
 	input xvec_mode_WB;
 	
@@ -34,7 +34,8 @@ module vscale_regfile_xvec (
 
 	assign rd1 = (|ra1)?
 					xvec_mode_DX?
-						{data[31][ra1], data[30][ra1], data[29][ra1], data[28][ra1],
+						// TODO: Fix this for `XVEC_VEC_LEN
+						{data[28][ra1],
 							data[27][ra1], data[26][ra1], data[25][ra1], data[24][ra1],
 							data[23][ra1], data[22][ra1], data[21][ra1], data[20][ra1],
 							data[19][ra1], data[18][ra1], data[17][ra1], data[16][ra1],
@@ -43,13 +44,14 @@ module vscale_regfile_xvec (
 							data[7][ra1], data[6][ra1], data[5][ra1], data[4][ra1],
 							data[3][ra1], data[2][ra1], data[1][ra1], data[0][ra1]}
 						:
-						{`XVEC_NORM_BITS_REM'h0, data[ra1][1]}
+						{{`XVEC_NORM_BITS_REM{1'b0}}, data[ra1][1]}
 					:
 					0;
 
 	assign rd2 = (|ra2)?
 					xvec_mode_DX?
-						{data[31][ra2], data[30][ra2], data[29][ra2], data[28][ra2],
+						// TODO: Fix this for `XVEC_VEC_LEN
+						{data[28][ra2],
 							data[27][ra2], data[26][ra2], data[25][ra2], data[24][ra2],
 							data[23][ra2], data[22][ra2], data[21][ra2], data[20][ra2],
 							data[19][ra2], data[18][ra2], data[17][ra2], data[16][ra2],
@@ -58,7 +60,7 @@ module vscale_regfile_xvec (
 							data[7][ra2], data[6][ra2], data[5][ra2], data[4][ra2],
 							data[3][ra2], data[2][ra2], data[1][ra2], data[0][ra2]}
 						:
-						{`XVEC_NORM_BITS_REM'h0, data[ra2][1]}
+						{{`XVEC_NORM_BITS_REM{1'b0}}, data[ra2][1]}
 					:
 					0;
 
@@ -69,7 +71,7 @@ module vscale_regfile_xvec (
 				data[wa][1] = wd[`XPR_LEN-1:0];
 			end
 			else begin
-				for(i = 0; i < 32; i = i + 1)
+				for(i = 0; i < `XVEC_VEC_LEN; i = i + 1)
 					data[i][wa] = wd >> (i * `XPR_LEN);
 			end
 		end

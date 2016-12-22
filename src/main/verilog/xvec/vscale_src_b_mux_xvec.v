@@ -12,8 +12,8 @@ module vscale_src_b_mux_xvec (
 
 	input [`SRC_A_SEL_WIDTH-1:0] src_b_sel;
 	input [`XPR_LEN-1:0] imm;
-	input [(32 * `XPR_LEN)-1:0] rs2_data;
-	output reg [(32 * `XPR_LEN)-1:0] alu_src_b;
+	input [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] rs2_data;
+	output reg [(`XVEC_VEC_LEN * `XPR_LEN)-1:0] alu_src_b;
 
 	always @(*) begin
 		case(src_b_sel)
@@ -22,7 +22,8 @@ module vscale_src_b_mux_xvec (
 					alu_src_b = rs2_data;
 				end
 			`SRC_B_IMM:
-				alu_src_b = {imm, imm, imm, imm, imm, imm, imm, imm,
+				// TODO: Fix this for `XVEC_VEC_LEN
+				alu_src_b = {imm, imm, imm, imm, imm,
 								imm, imm, imm, imm, imm, imm, imm, imm,
 								imm, imm, imm, imm, imm, imm, imm, imm,
 								imm, imm, imm, imm, imm, imm, imm, imm};
