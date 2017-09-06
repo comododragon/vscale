@@ -1,3 +1,7 @@
 `define VEC_SIZE 4
-`define VEC_ADDR_WIDTH 3
 `define VEC_XPR_LEN (`XPR_LEN * `VEC_SIZE)
+
+`define XVEC2_LOAD 7'b0001011
+`define XVEC2_STORE 7'b0101011
+`define XVEC2_OP_IMM 7'b1011011
+`define XVEC2_OP 7'b1111011

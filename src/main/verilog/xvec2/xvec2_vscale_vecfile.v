@@ -14,12 +14,12 @@ module xvec2_vscale_vecfile(
 	);
 
 	input clk;
-	input [`VEC_ADDR_WIDTH-1:0] ra1;
+	input [`REG_ADDR_WIDTH-1:0] ra1;
 	output [`VEC_XPR_LEN-1:0] rd1;
-	input [`VEC_ADDR_WIDTH-1:0] ra2;
+	input [`REG_ADDR_WIDTH-1:0] ra2;
 	output [`VEC_XPR_LEN-1:0] rd2;
 	input wen;
-	input [`VEC_ADDR_WIDTH-1:0] wa;
+	input [`REG_ADDR_WIDTH-1:0] wa;
 	input [`VEC_SIZE-1:0] wmask;
 	input [`VEC_XPR_LEN-1:0] wd;
 
@@ -30,9 +30,9 @@ module xvec2_vscale_vecfile(
 	assign wen_internal = wen && |wa;
 
 	// TODO: Ideally, the statements below should be created based on `VEC_ADDR_WIDTH (i.e. the number of concatenations would vary. How to do that?)
-	wire [`VEC_ADDR_WIDTH+2:0] xra1 = ra1 << 2;
-	wire [`VEC_ADDR_WIDTH+2:0] xra2 = ra2 << 2;
-	wire [`VEC_ADDR_WIDTH+2:0] xwa = wa << 2;
+	wire [`REG_ADDR_WIDTH-1:0] xra1 = ra1 & `REG_ADDR_WIDTH'h1C;
+	wire [`REG_ADDR_WIDTH-1:0] xra2 = ra2 & `REG_ADDR_WIDTH'h1C;
+	wire [`REG_ADDR_WIDTH-1:0] xwa = wa & `REG_ADDR_WIDTH'h1C;
 	assign rd1 = (|xra1)? {data[xra1 + 3], data[xra1 + 2], data[xra1 + 1], data[xra1]} : 0;
 	assign rd2 = (|xra2)? {data[xra2 + 3], data[xra2 + 2], data[xra2 + 1], data[xra2]} : 0;
 

@@ -126,14 +126,15 @@ module vscale_pipeline (
 	wire bypass_rs1;
 	wire bypass_rs2;
 `ifdef XVEC2
-	wire [`SRC_B_SEL_WIDTH-1:0] xvec2_src_b_sel;
+	wire xvec2_mode_WB;
+	//wire [`SRC_B_SEL_WIDTH-1:0] xvec2_src_b_sel;
 	//wire [`VEC_ADDR_WIDTH-1:0] xvec2_rs1_addr;
 	//wire [`VEC_ADDR_WIDTH-1:0] xvec2_rs2_addr;
 	wire [`VEC_XPR_LEN-1:0] xvec2_rs1_data;
 	wire [`VEC_XPR_LEN-1:0] xvec2_rs2_data;
 	wire [`VEC_XPR_LEN-1:0] xvec2_rs1_data_bypassed;
 	wire [`VEC_XPR_LEN-1:0] xvec2_rs2_data_bypassed;
-	wire [`ALU_OP_WIDTH-1:0] xvec2_alu_op;
+	//wire [`ALU_OP_WIDTH-1:0] xvec2_alu_op;
 	wire [`VEC_XPR_LEN-1:0] xvec2_alu_src_a;
 	wire [`VEC_XPR_LEN-1:0] xvec2_alu_src_b;
 	wire [`VEC_XPR_LEN-1:0] xvec2_alu_out;
@@ -152,12 +153,12 @@ module vscale_pipeline (
 	wire [`XPR_LEN-1:0] md_resp_result;
 
 `ifdef XVEC2
-	wire xvec2_md_req_valid;
+	//wire xvec2_md_req_valid;
 	wire xvec2_md_req_ready;
-	wire xvec2_md_req_in_1_signed;
-	wire xvec2_md_req_in_2_signed;
-	wire [`MD_OUT_SEL_WIDTH-1:0] xvec2_md_req_out_sel;
-	wire [`MD_OP_WIDTH-1:0] xvec2_md_req_op;
+	//wire xvec2_md_req_in_1_signed;
+	//wire xvec2_md_req_in_2_signed;
+	//wire [`MD_OUT_SEL_WIDTH-1:0] xvec2_md_req_out_sel;
+	//wire [`MD_OP_WIDTH-1:0] xvec2_md_req_op;
 	wire xvec2_md_resp_valid;
 	wire [`VEC_XPR_LEN-1:0] xvec2_md_resp_result;
 `endif
@@ -184,9 +185,10 @@ module vscale_pipeline (
 	wire [`WB_SRC_SEL_WIDTH-1:0] wb_src_sel_WB;
 `ifdef XVEC2
 	reg [`VEC_XPR_LEN-1:0] xvec2_wb_data_WB;
-	wire [`VEC_ADDR_WIDTH-1:0] xvec2_reg_to_wr_WB;
-	wire xvec2_wr_reg_WB;
-	wire [`WB_SRC_SEL_WIDTH-1:0] xvec2_wb_src_sel_WB;
+	reg [`VEC_SIZE-1:0] xvec2_wmask;
+	//wire [`REG_ADDR_WIDTH-1:0] xvec2_reg_to_wr_WB;
+	//wire xvec2_wr_reg_WB;
+	//wire [`WB_SRC_SEL_WIDTH-1:0] xvec2_wb_src_sel_WB;
 `endif
 	reg [`MEM_TYPE_WIDTH-1:0] dmem_type_WB;
 
@@ -255,20 +257,21 @@ module vscale_pipeline (
 		.eret(eret)
 `ifdef XVEC2
 		,
-		.xvec2_src_b_sel(xvec2_src_b_sel),
+		.xvec2_mode_WB(xvec2_mode_WB),
+		//.xvec2_src_b_sel(xvec2_src_b_sel),
 		.xvec2_bypass_rs1(xvec2_bypass_rs1),
 		.xvec2_bypass_rs2(xvec2_bypass_rs2),
-		.xvec2_alu_op(xvec2_alu_op),
-		.xvec2_md_req_valid(xvec2_md_req_valid),
+		//.xvec2_alu_op(xvec2_alu_op),
+		//.xvec2_md_req_valid(xvec2_md_req_valid),
 		.xvec2_md_req_ready(xvec2_md_req_ready),
-		.xvec2_md_req_op(xvec2_md_req_op),
-		.xvec2_md_req_in_1_signed(xvec2_md_req_in_1_signed),
-		.xvec2_md_req_in_2_signed(xvec2_md_req_in_2_signed),
-		.xvec2_md_req_out_sel(xvec2_md_req_out_sel),
-		.xvec2_md_resp_valid(xvec2_md_resp_valid),
-		.xvec2_wr_reg_WB(xvec2_wr_reg_WB),
-		.xvec2_reg_to_wr_WB(xvec2_reg_to_wr_WB),
-		.xvec2_wb_src_sel_WB(xvec2_wb_src_sel_WB)
+		//.xvec2_md_req_op(xvec2_md_req_op),
+		//.xvec2_md_req_in_1_signed(xvec2_md_req_in_1_signed),
+		//.xvec2_md_req_in_2_signed(xvec2_md_req_in_2_signed),
+		//.xvec2_md_req_out_sel(xvec2_md_req_out_sel),
+		.xvec2_md_resp_valid(xvec2_md_resp_valid)
+		//.xvec2_wr_reg_WB(xvec2_wr_reg_WB),
+		//.xvec2_reg_to_wr_WB(xvec2_reg_to_wr_WB),
+		//.xvec2_wb_src_sel_WB(xvec2_wb_src_sel_WB)
 `endif
 	);
 
@@ -332,10 +335,10 @@ module vscale_pipeline (
 		.rd1(xvec2_rs1_data),
 		.ra2(rs2_addr),
 		.rd2(xvec2_rs2_data),
-		.wen(xvec2_wr_reg_WB),
-		.wa(xvec2_reg_to_wr_WB),
-		// TODO TODO TODO TODO TODO usar para o load
-		.wmask('hf),
+		//.wen(xvec2_wr_reg_WB),
+		.wen(wr_reg_WB),
+		.wa(reg_to_wr_WB),
+		.wmask(xvec2_wmask),
 		.wd(xvec2_wb_data_WB)
 	);
 `endif
@@ -362,13 +365,14 @@ module vscale_pipeline (
 
 `ifdef XVEC2
 	xvec2_vscale_src_a_mux xv_src_a_mux (
-		.src_a_sel(0),
+		.src_a_sel(2'h0),
 		.rs1_data(xvec2_rs1_data_bypassed),
 		.alu_src_a(xvec2_alu_src_a)
 	);
 
 	xvec2_vscale_src_b_mux xv_src_b_mux (
-		.src_b_sel(xvec2_src_b_sel),
+		//.src_b_sel(xvec2_src_b_sel),
+		.src_b_sel(src_b_sel),
 		// TODO: make this concat dependable on VEC_WIDTH?
 		.imm({imm, imm, imm, imm}),
 		.rs2_data(xvec2_rs2_data_bypassed),
@@ -407,7 +411,8 @@ module vscale_pipeline (
 
 `ifdef XVEC2
 	xvec2_vscale_alu xv_alu (
-		.op(xvec2_alu_op),
+		//.op(xvec2_alu_op),
+		.op(alu_op),
 		.in1(xvec2_alu_src_a),
 		.in2(xvec2_alu_src_b),
 		.out(xvec2_alu_out)
@@ -416,12 +421,18 @@ module vscale_pipeline (
 	xvec2_vscale_mul_div xv_md (
 		.clk(clk),
 		.reset(reset),
-		.req_valid(xvec2_md_req_valid),
+		//.req_valid(xvec2_md_req_valid),
+		.req_valid(md_req_valid),
+		//.req_ready(xvec2_md_req_ready),
 		.req_ready(xvec2_md_req_ready),
-		.req_in_1_signed(xvec2_md_req_in_1_signed),
-		.req_in_2_signed(xvec2_md_req_in_2_signed),
-		.req_out_sel(xvec2_md_req_out_sel),
-		.req_op(xvec2_md_req_op),
+		//.req_in_1_signed(xvec2_md_req_in_1_signed),
+		//.req_in_2_signed(xvec2_md_req_in_2_signed),
+		.req_in_1_signed(md_req_in_1_signed),
+		.req_in_2_signed(md_req_in_2_signed),
+		//.req_out_sel(xvec2_md_req_out_sel),
+		.req_out_sel(md_req_out_sel),
+		//.req_op(xvec2_md_req_op),
+		.req_op(md_req_op),
 		.req_in_1(xvec2_rs1_data_bypassed),
 		.req_in_2(xvec2_rs2_data_bypassed),
 		.resp_valid(xvec2_md_resp_valid),
@@ -449,8 +460,9 @@ module vscale_pipeline (
 `ifndef XVEC2
 			store_data_WB <= rs2_data_bypassed;
 `else
-			// TODO: Get register address to get only one part of xvec2_rs2_data_bypassed
-			//store_data_WB <= xvec2_mode? xvec2_rs2_data_bypassed : rs2_data_bypassed;
+			// TODO: I believe that rs2_addr is not the right thing to be used here. Probably rs2_addr should assigned to a register which is then used here to create latency
+			// TODO: logic operations could be used instead of modulo and product
+			store_data_WB <= xvec2_mode_WB? (xvec2_rs2_data_bypassed >> ((rs2_addr % `VEC_SIZE) * `XPR_LEN)) : rs2_data_bypassed;
 `endif
 			alu_out_WB <= alu_out;
 			csr_rdata_WB <= csr_rdata;
@@ -469,7 +481,7 @@ module vscale_pipeline (
 		endcase
 
 `ifdef XVEC2
-		case(xvec2_wb_src_sel_WB)
+		case(wb_src_sel_WB)
 			//`WB_SRC_CSR: xvec2_bypass_data_WB = csr_rdata_WB;
 			`WB_SRC_MD: xvec2_bypass_data_WB = xvec2_md_resp_result;
 			default: xvec2_bypass_data_WB = xvec2_alu_out_WB;
@@ -477,7 +489,6 @@ module vscale_pipeline (
 `endif
 	end
 
-	// TODO: xvec2 here?
 	assign load_data_WB = load_data(alu_out_WB, dmem_rdata, dmem_type_WB);
 
 	always @(*) begin
@@ -490,18 +501,33 @@ module vscale_pipeline (
 		endcase
 
 `ifdef XVEC2
-		case(xvec2_wb_src_sel_WB)
-			`WB_SRC_ALU: xvec2_wb_data_WB = xvec2_bypass_data_WB;
-			// TODO: create a mask for wb_data_WB, since loads are to registers and not to vectors
-			//`WB_SRC_MEM: wb_data_WB = load_data_WB;
+		case(wb_src_sel_WB)
+			`WB_SRC_ALU:
+				begin
+					xvec2_wb_data_WB = xvec2_bypass_data_WB;
+					xvec2_wmask = `VEC_SIZE'hf;
+				end
+			`WB_SRC_MEM:
+				begin
+					// TODO: logic operations could be used instead of modulo and product
+					xvec2_wb_data_WB = load_data_WB << ((reg_to_wr_WB % `VEC_SIZE) * `XPR_LEN);
+					xvec2_wmask = 1 << (reg_to_wr_WB % `VEC_SIZE);
+				end
 			//`WB_SRC_CSR: wb_data_WB = bypass_data_WB;
-			`WB_SRC_MD: xvec2_wb_data_WB = xvec2_bypass_data_WB;
-			default: xvec2_wb_data_WB = xvec2_bypass_data_WB;
+			`WB_SRC_MD:
+				begin
+					xvec2_wb_data_WB = xvec2_bypass_data_WB;
+					xvec2_wmask = `VEC_SIZE'hf;
+				end
+			default:
+				begin
+					xvec2_wb_data_WB = xvec2_bypass_data_WB;
+					xvec2_wmask = `VEC_SIZE'hf;
+				end
 		endcase
 `endif
 	end
 
-	// TODO: xvec2 here?
 	assign dmem_wdata_delayed = store_data(alu_out_WB, store_data_WB, dmem_type_WB);
 
 	// CSR

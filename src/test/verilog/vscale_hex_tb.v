@@ -138,9 +138,10 @@ module vscale_hex_tb();
 			if(simControlInteractivity) begin
 				$display(">> PC_IF = 0x%08x\tPC_DX = 0x%08x\tPC_WB = 0x%08x", DUT.vscale.pipeline.PC_IF, DUT.vscale.pipeline.PC_DX, DUT.vscale.pipeline.PC_WB);
 				$display(">> Interaction:");
+`ifndef XVEC2_SIM
 				$display(">> \tr: Read a register");
-`ifdef XVEC
-				$display(">> \tv: Read register vector");
+`else
+				$display(">> \tr: Read a register/vector");
 `endif
 				$display(">> \tw: Manipulate a register");
 				$display(">> \tt: Read from memory");
@@ -163,9 +164,15 @@ module vscale_hex_tb();
 						begin
 							$display(">>> Read a register:");
 							$display(">>> \t0-31: General-purpose registers 0-31");
+`ifdef XVEC2_SIM
+							$display(">>> \t32-63: Vector registers 0-31 (packed in quadruples)");
+`endif
 							$display(">>> \t-1: All general-purpose registers");
 							$display(">>> \t-2: All control status registers");
 							$display(">>> \t-3: All registers");
+`ifdef XVEC2_SIM
+							$display(">>> \t-4: All vector registers");
+`endif
 							$display(">>> \tElse: Return");
 
 							$write(">>> Your destiny: ");
@@ -174,7 +181,6 @@ module vscale_hex_tb();
 
 							if(-1 == simControlReadInt) begin
 								for(simControlAux = 0; simControlAux < 32; simControlAux = simControlAux + 4) begin
-`ifndef XVEC
 									$write(">>>> r%02d: 0x%08x\t", simControlAux,
 																	DUT.vscale.pipeline.regfile.data[simControlAux]);
 									$write(">>>> r%02d: 0x%08x\t", simControlAux + 1,
@@ -183,16 +189,6 @@ module vscale_hex_tb();
 																	DUT.vscale.pipeline.regfile.data[simControlAux + 2]);
 									$write(">>>> r%02d: 0x%08x", simControlAux + 3,
 																	DUT.vscale.pipeline.regfile.data[simControlAux + 3]);
-`else
-									$write(">>>> r%02d: 0x%08x\t", simControlAux,
-																	DUT.vscale.pipeline.regfile.data[simControlAux][1]);
-									$write(">>>> r%02d: 0x%08x\t", simControlAux + 1,
-																	DUT.vscale.pipeline.regfile.data[simControlAux + 1][1]);
-									$write(">>>> r%02d: 0x%08x\t", simControlAux + 2,
-																	DUT.vscale.pipeline.regfile.data[simControlAux + 2][1]);
-									$write(">>>> r%02d: 0x%08x", simControlAux + 3,
-																	DUT.vscale.pipeline.regfile.data[simControlAux + 3][1]);
-`endif
 									$write("\n");
 								end
 
@@ -204,70 +200,43 @@ module vscale_hex_tb();
 							else if(-3 == simControlReadInt) begin
 								$display(">>>> TO BE IMPLEMENTED!");
 							end
-							else if(simControlReadInt >= 0 && simControlReadInt < 32) begin
-`ifndef XVEC
-								$display(">>>> r%02d: 0x%08x", simControlReadInt, DUT.vscale.pipeline.regfile.data[simControlReadInt]);
-`else
-								$display(">>>> r%02d: 0x%08x", simControlReadInt, DUT.vscale.pipeline.regfile.data[simControlReadInt][1]);
-`endif
-
-								pressToContinue(4);
-							end
-						end
-`ifdef XVEC
-					'h76:
-						begin
-							$display(">>> Read a register:");
-							$display(">>> \t0-3: Register vector 0-3");
-							$display(">>> \t-1: All vectors");
-							$display(">>> \tElse: Return");
-
-							$write(">>> Your destiny: ");
-							simControlDummyOutput = $fscanf(`STDIN, "%d", simControlReadInt);
-							consumeTrailingCharacters;
-
-							if(-1 == simControlReadInt) begin
-								for(simControlAux = 0; simControlAux < 4; simControlAux = simControlAux + 1) begin
-									$write(">>>> VECTOR %02d =========\n", simControlAux);
-
-									for(simControlAux2 = 0; simControlAux2 < 32; simControlAux2 = simControlAux2 + 4) begin
-										$write(">>>> r%02d: 0x%08x\t", simControlAux2,
-													DUT.vscale.pipeline.regfile.data[simControlAux2][simControlAux]);
-										$write(">>>> r%02d: 0x%08x\t", simControlAux2 + 1,
-													DUT.vscale.pipeline.regfile.data[simControlAux2 + 1][simControlAux]);
-										$write(">>>> r%02d: 0x%08x\t", simControlAux2 + 2,
-													DUT.vscale.pipeline.regfile.data[simControlAux2 + 2][simControlAux]);
-										$write(">>>> r%02d: 0x%08x", simControlAux2 + 3,
-													DUT.vscale.pipeline.regfile.data[simControlAux2 + 3][simControlAux]);
-										$write("\n");
-									end
-
-									$write(">>>> ===================\n");
-								end
-
-								pressToContinue(4);
-							end
-							else if(simControlReadInt >= 0 && simControlReadInt < 4) begin
+`ifdef XVEC2_SIM
+							else if(-4 == simControlReadInt) begin
 								for(simControlAux = 0; simControlAux < 32; simControlAux = simControlAux + 4) begin
-									$write(">>>> r%02d: 0x%08x\t", simControlAux,
-													DUT.vscale.pipeline.regfile.data[simControlAux][simControlReadInt]);
-									$write(">>>> r%02d: 0x%08x\t", simControlAux + 1,
-													DUT.vscale.pipeline.regfile.data[simControlAux + 1][simControlReadInt]);
-									$write(">>>> r%02d: 0x%08x\t", simControlAux + 2,
-													DUT.vscale.pipeline.regfile.data[simControlAux + 2][simControlReadInt]);
-									$write(">>>> r%02d: 0x%08x", simControlAux + 3,
-													DUT.vscale.pipeline.regfile.data[simControlAux + 3][simControlReadInt]);
+									$write(">>>> r%02d: 0x%08x\t", simControlAux + 32,
+																	DUT.vscale.pipeline.xv_vecfile.data[simControlAux]);
+									$write(">>>> r%02d: 0x%08x\t", simControlAux + 32 + 1,
+																	DUT.vscale.pipeline.xv_vecfile.data[simControlAux + 1]);
+									$write(">>>> r%02d: 0x%08x\t", simControlAux + 32 + 2,
+																	DUT.vscale.pipeline.xv_vecfile.data[simControlAux + 2]);
+									$write(">>>> r%02d: 0x%08x", simControlAux + 32 + 3,
+																	DUT.vscale.pipeline.xv_vecfile.data[simControlAux + 3]);
 									$write("\n");
 								end
 
 								pressToContinue(4);
 							end
-						end
 `endif
+							else if(simControlReadInt >= 0 && simControlReadInt < 32) begin
+								$display(">>>> r%02d: 0x%08x", simControlReadInt, DUT.vscale.pipeline.regfile.data[simControlReadInt]);
+
+								pressToContinue(4);
+							end
+`ifdef XVEC2_SIM
+							else if(simControlReadInt >= 32 && simControlReadInt < 64) begin
+								$display(">>>> r%02d: 0x%08x", simControlReadInt, DUT.vscale.pipeline.xv_vecfile.data[simControlReadInt - 32]);
+
+								pressToContinue(4);
+							end
+`endif
+						end
 					'h77:
 						begin
 							$display(">>> Manipulate a register:");
 							$display(">>> \t0-31: General-purpose registers 0-31");
+`ifdef XVEC2_SIM
+							$display(">>> \t32-63: Vector registers 0-31 (packed in quadruples)");
+`endif
 							$display(">>> \tElse: Return");
 
 							$write(">>> Your destiny: ");
@@ -280,14 +249,22 @@ module vscale_hex_tb();
 								consumeTrailingCharacters;
 
 								$display(">>>> Setting 0x%08x at r%02d", simControlReadInt2, simControlReadInt);
-`ifndef XVEC
 								DUT.vscale.pipeline.regfile.data[simControlReadInt] = simControlReadInt2;
-`else
-								DUT.vscale.pipeline.regfile.data[simControlReadInt][1] = simControlReadInt2;
-`endif
 
 								pressToContinue(4);
 							end
+`ifdef XVEC2_SIM
+							else if(simControlReadInt > 35 && simControlReadInt < 64) begin
+								$write(">>>> Value (as hex w/o 0x): ");
+								simControlDummyOutput = $fscanf(`STDIN, "%x", simControlReadInt2);
+								consumeTrailingCharacters;
+
+								$display(">>>> Setting 0x%08x at r%02d", simControlReadInt2, simControlReadInt);
+								DUT.vscale.pipeline.xv_vecfile.data[simControlReadInt - 32] = simControlReadInt2;
+
+								pressToContinue(4);
+							end
+`endif
 						end
 					'h74:
 						begin

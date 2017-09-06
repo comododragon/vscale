@@ -4,8 +4,8 @@
 `include "vscale_csr_addr_map.vh"
 `include "vscale_md_constants.vh"
 
-`ifdef XVEC
-`include "xvec/xvec_defines.vh"
+`ifdef XVEC2
+`include "xvec2/xvec2_defines.vh"
 `endif
 
 module vscale_ctrl (
@@ -54,10 +54,23 @@ module vscale_ctrl (
 		exception_WB,
 		exception_code_WB,
 		retire_WB
-`ifdef XVEC
+`ifdef XVEC2
 		,
-		xvec_mode_DX,
-		xvec_mode_WB
+		xvec2_mode_WB,
+		//xvec2_src_b_sel,
+		xvec2_bypass_rs1,
+		xvec2_bypass_rs2,
+		//xvec2_alu_op,
+		//xvec2_md_req_valid,
+		xvec2_md_req_ready,
+		//xvec2_md_req_op,
+		//xvec2_md_req_in_1_signed,
+		//xvec2_md_req_in_2_signed,
+		//xvec2_md_req_out_sel,
+		xvec2_md_resp_valid,
+		//xvec2_wr_reg_WB,
+		//xvec2_reg_to_wr_WB,
+		//xvec2_wb_src_sel_WB
 `endif
 	);
 
@@ -106,9 +119,22 @@ module vscale_ctrl (
 	output wire exception_WB;
 	output wire [`ECODE_WIDTH-1:0] exception_code_WB;
 	output wire retire_WB;
-`ifdef XVEC
-	output reg xvec_mode_DX;
-	output reg xvec_mode_WB;
+`ifdef XVEC2
+	output reg xvec2_mode_WB;
+	//output reg [`SRC_B_SEL_WIDTH-1:0] xvec2_src_b_sel;
+	output xvec2_bypass_rs1;
+	output xvec2_bypass_rs2;
+	//output reg [`ALU_OP_WIDTH-1:0] xvec2_alu_op;
+	//output xvec2_md_req_valid;
+	input xvec2_md_req_ready;
+	//output reg xvec2_md_req_in_1_signed;
+	//output reg xvec2_md_req_in_2_signed;
+	//output reg [`MD_OP_WIDTH-1:0] xvec2_md_req_op;
+	//output reg [`MD_OUT_SEL_WIDTH-1:0] xvec2_md_req_out_sel;
+	input xvec2_md_resp_valid;
+	//output wire xvec2_wr_reg_WB;
+	//output reg [`REG_ADDR_WIDTH-1:0] xvec2_reg_to_wr_WB;
+	//output reg [`WB_SRC_SEL_WIDTH-1:0] xvec2_wb_src_sel_WB;
 `endif
 
 	// IF stage ctrl pipeline registers
@@ -158,6 +184,9 @@ module vscale_ctrl (
 	reg wfi_unkilled_DX;
 	wire wfi_DX;
 	reg [`CSR_CMD_WIDTH-1:0] csr_cmd_unkilled;
+`ifdef XVEC2
+	reg xvec2_mode;
+`endif
 
 	// WB stage ctrl pipeline registers
 	reg wr_reg_unkilled_WB;
@@ -185,6 +214,10 @@ module vscale_ctrl (
 	wire raw_rs1;
 	wire raw_rs2;
 	wire raw_on_busy_md;
+`ifdef XVEC2
+	wire xvec2_raw_rs1;
+	wire xvec2_raw_rs2;
+`endif
 
 	// IF stage ctrl
 	always @(posedge clk) begin
@@ -221,7 +254,12 @@ module vscale_ctrl (
 										load_use ||
 										raw_on_busy_md ||
 										(fence_i && store_in_WB) ||
+`ifndef XVEC2
 										(uses_md_unkilled && !md_req_ready)
+`else
+										// TODO: Ta serto?
+										(uses_md_unkilled && (!md_req_ready || !xvec2_md_req_ready))
+`endif
 									)
 									&& !(ex_DX || ex_WB || interrupt_taken)
 								);
@@ -285,9 +323,6 @@ module vscale_ctrl (
 		wb_src_sel_DX = `WB_SRC_ALU;
 		uses_md_unkilled = 1'b0;
 		wfi_unkilled_DX = 1'b0;
-`ifdef XVEC
-		xvec_mode_DX = 1'b0;
-`endif
 		case(opcode)
 			`RV32_LOAD:
 				begin
@@ -353,27 +388,13 @@ module vscale_ctrl (
 						default: illegal_instruction = 1'b1;
 					endcase
 				end
-`ifndef XVEC
 			`RV32_OP_IMM:
 				begin
-`else
-			`RV32_OP_IMM, `XVEC_OP_IMM:
-				begin
-`endif
 					alu_op = alu_op_arith;
 					wr_reg_unkilled_DX = 1'b1;
-`ifdef XVEC
-					if(`XVEC_OP_IMM == opcode)
-						xvec_mode_DX = 1'b1;
-`endif
 				end
-`ifndef XVEC
 			`RV32_OP:
 				begin
-`else
-			`RV32_OP, `XVEC_OP:
-				begin
-`endif
 					uses_rs2 = 1'b1;
 					src_b_sel = `SRC_B_RS2;
 					alu_op = alu_op_arith;
@@ -382,10 +403,6 @@ module vscale_ctrl (
 						uses_md_unkilled = 1'b1;
 						wb_src_sel_DX = `WB_SRC_MD;
 					end
-`ifdef XVEC
-					if(`XVEC_OP == opcode)
-						xvec_mode_DX = 1'b1;
-`endif
 				end
 			`RV32_SYSTEM:
 				begin
@@ -437,14 +454,45 @@ module vscale_ctrl (
 				begin
 					illegal_instruction = 1'b1;
 				end
+`ifdef XVEC2
+			`XVEC2_LOAD:
+				begin
+					xvec2_mode = 1'b1;
+					dmem_en_unkilled = 1'b1;
+					wr_reg_unkilled_DX = 1'b1;
+					wb_src_sel_DX = `WB_SRC_MEM;
+				end
+			`XVEC2_STORE:
+				begin
+					xvec2_mode = 1'b1;
+					uses_rs2 = 1'b1;
+					imm_type = `IMM_S;
+					dmem_en_unkilled = 1'b1;
+					dmem_wen_unkilled = 1'b1;
+				end
+			`XVEC2_OP_IMM:
+				begin
+					xvec2_mode = 1'b1;
+					alu_op = alu_op_arith;
+					wr_reg_unkilled_DX = 1'b1;
+				end
+			`XVEC2_OP:
+				begin
+					xvec2_mode = 1'b1;
+					uses_rs2 = 1'b1;
+					src_b_sel = `SRC_B_RS2;
+					alu_op = alu_op_arith;
+					wr_reg_unkilled_DX = 1'b1;
+					if(funct7 == `RV32_FUNCT7_MUL_DIV) begin
+						uses_md_unkilled = 1'b1;
+						wb_src_sel_DX = `WB_SRC_MD;
+					end
+				end
+`endif
 		endcase
 	end
 
-`ifndef XVEC
 	assign add_or_sub = ((opcode == `RV32_OP) && (funct7[5]))? `ALU_OP_SUB : `ALU_OP_ADD;
-`else
-	assign add_or_sub = ((opcode == `RV32_OP || opcode == `XVEC_OP) && (funct7[5]))? `ALU_OP_SUB : `ALU_OP_ADD;
-`endif
 	assign srl_or_sra = (funct7[5])? `ALU_OP_SRA : `ALU_OP_SRL;
 
 	assign md_req_valid = uses_md;
@@ -559,9 +607,8 @@ module vscale_ctrl (
 			dmem_en_WB <= 0;
 			uses_md_WB <= 0;
 			wfi_unkilled_WB <= 0;
-// TODO: Precisa memo?
-`ifdef XVEC
-			xvec_mode_WB <= 0;
+`ifdef XVEC2
+			xvec2_mode_WB <= 0;
 `endif
 		end
 		else if(!stall_WB) begin
@@ -571,13 +618,13 @@ module vscale_ctrl (
 			wb_src_sel_WB <= wb_src_sel_DX;
 			prev_ex_code_WB <= ex_code_DX;
 			reg_to_wr_WB <= reg_to_wr_DX;
-`ifdef XVEC
-			xvec_mode_WB <= xvec_mode_DX;
-`endif
 			store_in_WB <= dmem_wen;
 			dmem_en_WB <= dmem_en;
 			uses_md_WB <= uses_md;
 			wfi_unkilled_WB <= wfi_DX;
+`ifdef XVEC2
+			xvec2_mode_WB <= xvec2_mode;
+`endif
 		end
 	end
 
@@ -586,7 +633,11 @@ module vscale_ctrl (
 	assign active_wfi_WB = !prev_killed_WB && wfi_unkilled_WB && !(interrupt_taken || interrupt_pending);
 
 	assign kill_WB = stall_WB || ex_WB;
+`ifndef XVEC2
 	assign stall_WB = ((dmem_wait && dmem_en_WB) || (uses_md_WB && !md_resp_valid) || active_wfi_WB) && !exception;
+`else
+	assign stall_WB = ((dmem_wait && dmem_en_WB) || (uses_md_WB && (!md_resp_valid || !xvec2_md_resp_valid)) || active_wfi_WB) && !exception;
+`endif
 	assign dmem_access_exception = dmem_badmem_e;
 	assign ex_WB = had_ex_WB || dmem_access_exception;
 	assign killed_WB = prev_killed_WB || kill_WB;
@@ -615,7 +666,26 @@ module vscale_ctrl (
 	assign raw_rs2 = wr_reg_WB && (rs2_addr == reg_to_wr_WB) && (rs2_addr != 0) && uses_rs2;
 	assign bypass_rs2 = !load_in_WB && raw_rs2;
 
+`ifdef XVEC2
+	// TODO: Checar se estes addr estao certos!
+	assign xvec2_raw_rs1 = wr_reg_WB
+		&& ((rs1_addr & `REG_ADDR_WIDTH'h1C) == (reg_to_wr_WB & `REG_ADDR_WIDTH'h1C))
+		&& ((rs1_addr & `REG_ADDR_WIDTH'h1C) != 0)
+		&& uses_rs1;
+	assign xvec2_bypass_rs1 = !load_in_WB && xvec2_raw_rs1;
+
+	assign xvec2_raw_rs2 = wr_reg_WB
+		&& ((rs2_addr & `REG_ADDR_WIDTH'h1C) == (reg_to_wr_WB & `REG_ADDR_WIDTH'h1C))
+		&& ((rs2_addr & `REG_ADDR_WIDTH'h1C) != 0)
+		&& uses_rs2;
+	assign xvec2_bypass_rs2 = !load_in_WB && xvec2_raw_rs2;
+`endif
+
+`ifndef XVEC2
 	assign raw_on_busy_md = uses_md_WB && (raw_rs1 || raw_rs2) && !md_resp_valid;
+`else
+	assign raw_on_busy_md = uses_md_WB && (raw_rs1 || raw_rs2) && (!md_resp_valid || !xvec2_md_resp_valid);
+`endif
 	assign load_use = load_in_WB && (raw_rs1 || raw_rs2);
 
 endmodule
