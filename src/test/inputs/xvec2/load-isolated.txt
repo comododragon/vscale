@@ -1,0 +1,9 @@
+- Puts 0x7000 on register 01 
+- Lots of NOPs
+- Puts 0x8000 on register 03
+- Lots of NOPs
+- Puts 0x9000 on vector register 01 (nothing should happen, since it is vector 0)
+- Lots of NOPs
+- Puts 0x9000 on register 05
+- Lots of NOPs
+- Puts 0xa000 on register 09

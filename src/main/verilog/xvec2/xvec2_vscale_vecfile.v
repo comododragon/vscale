@@ -27,7 +27,7 @@ module xvec2_vscale_vecfile(
 	wire wen_internal;
 
 	// fpga-style zero register
-	assign wen_internal = wen && |wa;
+	assign wen_internal = wen && |(xwa);
 
 	// TODO: Ideally, the statements below should be created based on `VEC_ADDR_WIDTH (i.e. the number of concatenations would vary. How to do that?)
 	wire [`REG_ADDR_WIDTH-1:0] xra1 = ra1 & `REG_ADDR_WIDTH'h1C;

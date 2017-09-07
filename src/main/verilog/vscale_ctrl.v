@@ -68,7 +68,7 @@ module vscale_ctrl (
 		//xvec2_md_req_in_2_signed,
 		//xvec2_md_req_out_sel,
 		xvec2_md_resp_valid,
-		//xvec2_wr_reg_WB,
+		xvec2_wr_reg_WB,
 		//xvec2_reg_to_wr_WB,
 		//xvec2_wb_src_sel_WB
 `endif
@@ -132,7 +132,7 @@ module vscale_ctrl (
 	//output reg [`MD_OP_WIDTH-1:0] xvec2_md_req_op;
 	//output reg [`MD_OUT_SEL_WIDTH-1:0] xvec2_md_req_out_sel;
 	input xvec2_md_resp_valid;
-	//output wire xvec2_wr_reg_WB;
+	output xvec2_wr_reg_WB;
 	//output reg [`REG_ADDR_WIDTH-1:0] xvec2_reg_to_wr_WB;
 	//output reg [`WB_SRC_SEL_WIDTH-1:0] xvec2_wb_src_sel_WB;
 `endif
@@ -323,6 +323,9 @@ module vscale_ctrl (
 		wb_src_sel_DX = `WB_SRC_ALU;
 		uses_md_unkilled = 1'b0;
 		wfi_unkilled_DX = 1'b0;
+`ifdef XVEC2
+		xvec2_mode = 0;
+`endif
 		case(opcode)
 			`RV32_LOAD:
 				begin
@@ -653,7 +656,12 @@ module vscale_ctrl (
 
 	assign exception_WB = ex_WB;
 	assign exception_code_WB = ex_code_WB;
+`ifndef XVEC2
 	assign wr_reg_WB = wr_reg_unkilled_WB && !kill_WB;
+`else
+	assign wr_reg_WB = wr_reg_unkilled_WB && !kill_WB && !xvec2_mode_WB;
+	assign xvec2_wr_reg_WB = wr_reg_unkilled_WB && !kill_WB && xvec2_mode_WB;
+`endif
 	assign retire_WB = !(kill_WB || killed_WB);
 
 	// Hazard logic

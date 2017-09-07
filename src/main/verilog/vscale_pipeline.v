@@ -187,7 +187,7 @@ module vscale_pipeline (
 	reg [`VEC_XPR_LEN-1:0] xvec2_wb_data_WB;
 	reg [`VEC_SIZE-1:0] xvec2_wmask;
 	//wire [`REG_ADDR_WIDTH-1:0] xvec2_reg_to_wr_WB;
-	//wire xvec2_wr_reg_WB;
+	wire xvec2_wr_reg_WB;
 	//wire [`WB_SRC_SEL_WIDTH-1:0] xvec2_wb_src_sel_WB;
 `endif
 	reg [`MEM_TYPE_WIDTH-1:0] dmem_type_WB;
@@ -268,8 +268,8 @@ module vscale_pipeline (
 		//.xvec2_md_req_in_1_signed(xvec2_md_req_in_1_signed),
 		//.xvec2_md_req_in_2_signed(xvec2_md_req_in_2_signed),
 		//.xvec2_md_req_out_sel(xvec2_md_req_out_sel),
-		.xvec2_md_resp_valid(xvec2_md_resp_valid)
-		//.xvec2_wr_reg_WB(xvec2_wr_reg_WB),
+		.xvec2_md_resp_valid(xvec2_md_resp_valid),
+		.xvec2_wr_reg_WB(xvec2_wr_reg_WB)
 		//.xvec2_reg_to_wr_WB(xvec2_reg_to_wr_WB),
 		//.xvec2_wb_src_sel_WB(xvec2_wb_src_sel_WB)
 `endif
@@ -335,8 +335,7 @@ module vscale_pipeline (
 		.rd1(xvec2_rs1_data),
 		.ra2(rs2_addr),
 		.rd2(xvec2_rs2_data),
-		//.wen(xvec2_wr_reg_WB),
-		.wen(wr_reg_WB),
+		.wen(xvec2_wr_reg_WB),
 		.wa(reg_to_wr_WB),
 		.wmask(xvec2_wmask),
 		.wd(xvec2_wb_data_WB)

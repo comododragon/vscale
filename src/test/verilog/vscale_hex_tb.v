@@ -138,7 +138,7 @@ module vscale_hex_tb();
 			if(simControlInteractivity) begin
 				$display(">> PC_IF = 0x%08x\tPC_DX = 0x%08x\tPC_WB = 0x%08x", DUT.vscale.pipeline.PC_IF, DUT.vscale.pipeline.PC_DX, DUT.vscale.pipeline.PC_WB);
 				$display(">> Interaction:");
-`ifndef XVEC2_SIM
+`ifndef XVEC2
 				$display(">> \tr: Read a register");
 `else
 				$display(">> \tr: Read a register/vector");
@@ -164,13 +164,13 @@ module vscale_hex_tb();
 						begin
 							$display(">>> Read a register:");
 							$display(">>> \t0-31: General-purpose registers 0-31");
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							$display(">>> \t32-63: Vector registers 0-31 (packed in quadruples)");
 `endif
 							$display(">>> \t-1: All general-purpose registers");
 							$display(">>> \t-2: All control status registers");
 							$display(">>> \t-3: All registers");
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							$display(">>> \t-4: All vector registers");
 `endif
 							$display(">>> \tElse: Return");
@@ -200,7 +200,7 @@ module vscale_hex_tb();
 							else if(-3 == simControlReadInt) begin
 								$display(">>>> TO BE IMPLEMENTED!");
 							end
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							else if(-4 == simControlReadInt) begin
 								for(simControlAux = 0; simControlAux < 32; simControlAux = simControlAux + 4) begin
 									$write(">>>> r%02d: 0x%08x\t", simControlAux + 32,
@@ -222,7 +222,7 @@ module vscale_hex_tb();
 
 								pressToContinue(4);
 							end
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							else if(simControlReadInt >= 32 && simControlReadInt < 64) begin
 								$display(">>>> r%02d: 0x%08x", simControlReadInt, DUT.vscale.pipeline.xv_vecfile.data[simControlReadInt - 32]);
 
@@ -234,7 +234,7 @@ module vscale_hex_tb();
 						begin
 							$display(">>> Manipulate a register:");
 							$display(">>> \t0-31: General-purpose registers 0-31");
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							$display(">>> \t32-63: Vector registers 0-31 (packed in quadruples)");
 `endif
 							$display(">>> \tElse: Return");
@@ -253,7 +253,7 @@ module vscale_hex_tb();
 
 								pressToContinue(4);
 							end
-`ifdef XVEC2_SIM
+`ifdef XVEC2
 							else if(simControlReadInt > 35 && simControlReadInt < 64) begin
 								$write(">>>> Value (as hex w/o 0x): ");
 								simControlDummyOutput = $fscanf(`STDIN, "%x", simControlReadInt2);
