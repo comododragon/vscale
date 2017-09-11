@@ -1,0 +1,24 @@
+- Puts 0xb000 on register 13
+- Puts 0xa000 on register 13
+- Puts 0x9000 on register 09
+- Puts 0x8000 on register 06
+- Puts 0x7000 on register 05
+- Puts 0xb000 on vector register 05
+- Puts 0xc000 on vector register 06
+- Puts 0xd000 on vector register 09
+- Puts 0xe000 on vector register 13
+- Puts 0xf000 on vector register 13
+- Puts 0xe000 on vector register 14
+- Puts 0xd000 on vector register 17
+- Puts 0xc000 on vector register 21
+- Puts vector register 21 (0xc000) on address 0x20
+- Puts vector register 17 (0xd000) on address 0x24
+- Puts vector register 14 (0xe000) on address 0x28
+- Puts vector register 13 (0xf000) on address 0x2c
+- Puts vector register 09 (0xd000) on address 0x30
+- Puts vector register 06 (0xc000) on address 0x34
+- Puts vector register 05 (0xb000) on address 0x38
+- Puts register 05 (0x7000) on address 0x3c
+- Puts register 06 (0x8000) on address 0x40
+- Puts register 09 (0x9000) on address 0x44
+- Puts register 13 (0xa000) on address 0x48

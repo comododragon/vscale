@@ -169,6 +169,7 @@ module vscale_pipeline (
 	reg [`XPR_LEN-1:0] store_data_WB;
 
 `ifdef XVEC2
+	reg [`XPR_LEN-1:0] xvec2_store_data_WB;
 	reg [`VEC_XPR_LEN-1:0] xvec2_alu_out_WB;
 `endif
 
@@ -274,7 +275,6 @@ module vscale_pipeline (
 		//.xvec2_wb_src_sel_WB(xvec2_wb_src_sel_WB)
 `endif
 	);
-
 
 	vscale_PC_mux PCmux(
 		.PC_src_sel(PC_src_sel),
@@ -382,8 +382,8 @@ module vscale_pipeline (
 	assign rs1_data_bypassed = bypass_rs1? bypass_data_WB : rs1_data;
 	assign rs2_data_bypassed = bypass_rs2? bypass_data_WB : rs2_data;
 `ifdef XVEC2
-	assign xvec2_rs1_data_bypassed = xvec2_bypass_rs1? xvec2_bypass_data_WB : rs1_data;
-	assign xvec2_rs2_data_bypassed = xvec2_bypass_rs2? xvec2_bypass_data_WB : rs2_data;
+	assign xvec2_rs1_data_bypassed = xvec2_bypass_rs1? xvec2_bypass_data_WB : xvec2_rs1_data;
+	assign xvec2_rs2_data_bypassed = xvec2_bypass_rs2? xvec2_bypass_data_WB : xvec2_rs2_data;
 `endif
 
 	vscale_alu alu (
@@ -450,18 +450,17 @@ module vscale_pipeline (
 			store_data_WB <= $random;
 			alu_out_WB <= $random;
 `ifdef XVEC2
+			xvec2_store_data_WB <= $random;
 			xvec2_alu_out_WB <= $random;
 `endif
 `endif
 		end
 		else if(~stall_WB) begin
 			PC_WB <= PC_DX;
-`ifndef XVEC2
 			store_data_WB <= rs2_data_bypassed;
-`else
-			// TODO: I believe that rs2_addr is not the right thing to be used here. Probably rs2_addr should assigned to a register which is then used here to create latency
+`ifdef XVEC2
 			// TODO: logic operations could be used instead of modulo and product
-			store_data_WB <= xvec2_mode_WB? (xvec2_rs2_data_bypassed >> ((rs2_addr % `VEC_SIZE) * `XPR_LEN)) : rs2_data_bypassed;
+			xvec2_store_data_WB <= xvec2_rs2_data_bypassed >> ((rs2_addr % `VEC_SIZE) * `XPR_LEN);
 `endif
 			alu_out_WB <= alu_out;
 			csr_rdata_WB <= csr_rdata;
@@ -471,6 +470,18 @@ module vscale_pipeline (
 `endif
 		end
 	end
+
+	/*
+	always @(posedge clk) begin
+		$display("weeeee %b %b %b %b %b", ctrl.stall_DX, ctrl.load_use, ctrl.raw_on_busy_md, ctrl.fence_i, ctrl.store_in_WB);
+`ifndef XVEC2
+		$display("%b %b %b /// %b %08x %08x %b", ctrl.bypass_rs2, ctrl.load_in_WB, ctrl.raw_rs2, ctrl.wr_reg_WB, ctrl.rs2_addr, ctrl.reg_to_wr_WB, ctrl.uses_rs2);
+		$display("%b %032x /// %08x %032x .//// %b %08x %08x", bypass_rs2, bypass_data_WB, rs2_addr, rs2_data_bypassed, dmem_wen, dmem_addr, dmem_wdata_delayed);
+`else
+		$display("%b %b %b /// %b %08x %08x %b", ctrl.xvec2_bypass_rs2, ctrl.load_in_WB, ctrl.xvec2_raw_rs2, ctrl.xvec2_wr_reg_WB, ctrl.rs2_addr, ctrl.reg_to_wr_WB, ctrl.uses_rs2);
+		$display("%b %032x /// %b %08x %032x .//// %b %08x %08x", xvec2_bypass_rs2, xvec2_bypass_data_WB, xvec2_mode_WB, rs2_addr, xvec2_rs2_data_bypassed, dmem_wen, dmem_addr, dmem_wdata_delayed);
+`endif
+	end*/
 
 	always @(*) begin
 		case(wb_src_sel_WB)
@@ -527,7 +538,13 @@ module vscale_pipeline (
 `endif
 	end
 
+`ifndef XVEC2
 	assign dmem_wdata_delayed = store_data(alu_out_WB, store_data_WB, dmem_type_WB);
+`else
+	assign dmem_wdata_delayed = xvec2_mode_WB?
+		store_data(alu_out_WB, xvec2_store_data_WB, dmem_type_WB) :
+		store_data(alu_out_WB, store_data_WB, dmem_type_WB);
+`endif
 
 	// CSR
 	assign csr_addr = inst_DX[31:20];

@@ -4,6 +4,6 @@
 - Lots of NOPs
 - Puts 0x9000 on vector register 01 (nothing should happen, since it is vector 0)
 - Lots of NOPs
-- Puts 0x9000 on register 05
+- Puts 0x9000 on vector register 05
 - Lots of NOPs
-- Puts 0xa000 on register 09
+- Puts 0xa000 on vector register 09

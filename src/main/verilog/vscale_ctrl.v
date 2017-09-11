@@ -676,13 +676,13 @@ module vscale_ctrl (
 
 `ifdef XVEC2
 	// TODO: Checar se estes addr estao certos!
-	assign xvec2_raw_rs1 = wr_reg_WB
+	assign xvec2_raw_rs1 = xvec2_wr_reg_WB
 		&& ((rs1_addr & `REG_ADDR_WIDTH'h1C) == (reg_to_wr_WB & `REG_ADDR_WIDTH'h1C))
 		&& ((rs1_addr & `REG_ADDR_WIDTH'h1C) != 0)
 		&& uses_rs1;
 	assign xvec2_bypass_rs1 = !load_in_WB && xvec2_raw_rs1;
 
-	assign xvec2_raw_rs2 = wr_reg_WB
+	assign xvec2_raw_rs2 = xvec2_wr_reg_WB
 		&& ((rs2_addr & `REG_ADDR_WIDTH'h1C) == (reg_to_wr_WB & `REG_ADDR_WIDTH'h1C))
 		&& ((rs2_addr & `REG_ADDR_WIDTH'h1C) != 0)
 		&& uses_rs2;
@@ -691,9 +691,10 @@ module vscale_ctrl (
 
 `ifndef XVEC2
 	assign raw_on_busy_md = uses_md_WB && (raw_rs1 || raw_rs2) && !md_resp_valid;
-`else
-	assign raw_on_busy_md = uses_md_WB && (raw_rs1 || raw_rs2) && (!md_resp_valid || !xvec2_md_resp_valid);
-`endif
 	assign load_use = load_in_WB && (raw_rs1 || raw_rs2);
+`else
+	assign raw_on_busy_md = uses_md_WB && (raw_rs1 || raw_rs2 || xvec2_raw_rs1 || xvec2_raw_rs2) && (!md_resp_valid || !xvec2_md_resp_valid);
+	assign load_use = load_in_WB && (raw_rs1 || raw_rs2 || xvec2_raw_rs1 || xvec2_raw_rs2);
+`endif
 
 endmodule
