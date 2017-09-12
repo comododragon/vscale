@@ -61,8 +61,8 @@ enables converting from plain C source codes directly to Hex files, readable by 
 There are some prerequisites, however:
 
 * ```python3``` must be installed;
-* ```riscv-gnu-toolchain``` (https://github.com/riscv/riscv-gnu-toolchain) and ```riscv-llvm```
-	(https://github.com/riscv/riscv-llvm) must be compiled, installed and on ```PATH```;
+* ```riscv-gnu-toolchain``` (https://github.com/comododragon/riscv-gnu-toolchain) and ```riscv-llvm```
+	(https://github.com/comododragon/riscv-llvm) must be compiled, installed and on ```PATH```;
 * C source codes should make no use of external libraries (e.g. ```stdio.h```).
 
 To use it, simply:
