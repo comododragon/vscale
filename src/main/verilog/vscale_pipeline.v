@@ -342,6 +342,12 @@ module vscale_pipeline (
 	);
 `endif
 
+`ifdef XVEC2
+	always @(posedge clk) begin
+		$display("%b %x %b %x", xvec2_wr_reg_WB, reg_to_wr_WB, xvec2_wmask, xvec2_wb_data_WB);
+	end
+`endif
+
 	vscale_imm_gen imm_gen (
 		.inst(inst_DX),
 		.imm_type(imm_type),
@@ -470,18 +476,6 @@ module vscale_pipeline (
 `endif
 		end
 	end
-
-	/*
-	always @(posedge clk) begin
-		$display("weeeee %b %b %b %b %b", ctrl.stall_DX, ctrl.load_use, ctrl.raw_on_busy_md, ctrl.fence_i, ctrl.store_in_WB);
-`ifndef XVEC2
-		$display("%b %b %b /// %b %08x %08x %b", ctrl.bypass_rs2, ctrl.load_in_WB, ctrl.raw_rs2, ctrl.wr_reg_WB, ctrl.rs2_addr, ctrl.reg_to_wr_WB, ctrl.uses_rs2);
-		$display("%b %032x /// %08x %032x .//// %b %08x %08x", bypass_rs2, bypass_data_WB, rs2_addr, rs2_data_bypassed, dmem_wen, dmem_addr, dmem_wdata_delayed);
-`else
-		$display("%b %b %b /// %b %08x %08x %b", ctrl.xvec2_bypass_rs2, ctrl.load_in_WB, ctrl.xvec2_raw_rs2, ctrl.xvec2_wr_reg_WB, ctrl.rs2_addr, ctrl.reg_to_wr_WB, ctrl.uses_rs2);
-		$display("%b %032x /// %b %08x %032x .//// %b %08x %08x", xvec2_bypass_rs2, xvec2_bypass_data_WB, xvec2_mode_WB, rs2_addr, xvec2_rs2_data_bypassed, dmem_wen, dmem_addr, dmem_wdata_delayed);
-`endif
-	end*/
 
 	always @(*) begin
 		case(wb_src_sel_WB)

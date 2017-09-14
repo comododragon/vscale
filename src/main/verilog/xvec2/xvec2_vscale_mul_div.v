@@ -30,11 +30,6 @@ module xvec2_vscale_mul_div (
 	output resp_valid;
 	output [`VEC_XPR_LEN-1:0] resp_result;
 
-	// TODO: TEMPORARYYYYYYYYYYYYYYYYYYYYYYYY
-	assign req_ready = 1;
-	assign resp_valid = 1;
-
-	/*
 	localparam md_state_width = 2;
 	localparam s_idle = 0;
 	localparam s_compute = 1;
@@ -45,43 +40,51 @@ module xvec2_vscale_mul_div (
 	reg [md_state_width-1:0] next_state;
 	reg [`MD_OP_WIDTH-1:0] op;
 	reg [`MD_OUT_SEL_WIDTH-1:0] out_sel;
-	reg negate_output;
-	reg [`DOUBLE_XPR_LEN-1:0] a;
-	reg [`DOUBLE_XPR_LEN-1:0] b;
+	reg [`VEC_SIZE-1:0] negate_output;
+	reg [`DOUBLE_XPR_LEN-1:0] a [0:`VEC_SIZE-1];
+	reg [`DOUBLE_XPR_LEN-1:0] b [0:`VEC_SIZE-1];
 	reg [`LOG2_XPR_LEN-1:0] counter;
-	reg [`DOUBLE_XPR_LEN-1:0] result;
+	reg [`DOUBLE_XPR_LEN-1:0] result [0:`VEC_SIZE-1];
 
-	wire [`XPR_LEN-1:0] abs_in_1;
-	wire sign_in_1;
-	wire [`XPR_LEN-1:0] abs_in_2;
-	wire sign_in_2;
+	wire [`XPR_LEN-1:0] abs_in_1 [0:`VEC_SIZE-1];
+	wire [`VEC_SIZE-1:0] sign_in_1;
+	wire [`XPR_LEN-1:0] abs_in_2 [0:`VEC_SIZE-1];
+	wire [`VEC_SIZE-1:0] sign_in_2;
 
-	wire a_geq;
-	wire [`DOUBLE_XPR_LEN-1:0] result_muxed;
-	wire [`DOUBLE_XPR_LEN-1:0] result_muxed_negated;
-	wire [`XPR_LEN-1:0] final_result;
+	wire [`VEC_SIZE-1:0] a_geq;
+	wire [`DOUBLE_XPR_LEN-1:0] result_muxed [0:`VEC_SIZE-1];
+	wire [`DOUBLE_XPR_LEN-1:0] result_muxed_negated [0:`VEC_SIZE-1];
+	wire [`XPR_LEN-1:0] final_result [0:`VEC_SIZE-1];
 
 	function [`XPR_LEN-1:0] abs_input;
 		input [`XPR_LEN-1:0] data;
 		input is_signed;
 		begin
-			abs_input = (data[`XPR_LEN-1] == 1'b1 && is_signed)? -data : data;
+			abs_input = (data[`XPR_LEN - 1] == 1'b1 && is_signed)? -data : data;
 		end
 	endfunction
 
 	assign req_ready = (state == s_idle);
 	assign resp_valid = (state == s_done);
-	assign resp_result = result[`XPR_LEN-1:0];
 
-	assign abs_in_1 = abs_input(req_in_1,req_in_1_signed);
-	assign sign_in_1 = req_in_1_signed && req_in_1[`XPR_LEN-1];
-	assign abs_in_2 = abs_input(req_in_2,req_in_2_signed);
-	assign sign_in_2 = req_in_2_signed && req_in_2[`XPR_LEN-1];
+	generate
+		genvar i;
 
-	assign a_geq = a >= b;
-	assign result_muxed = (out_sel == `MD_OUT_REM)? a : result;
-	assign result_muxed_negated = (negate_output)? -result_muxed : result_muxed;
-	assign final_result = (out_sel == `MD_OUT_HI)? result_muxed_negated[`XPR_LEN+:`XPR_LEN] : result_muxed_negated[0+:`XPR_LEN];
+		for(i = 0; i < `VEC_SIZE; i = i + 1) begin
+			assign resp_result[(((i + 1) * `XPR_LEN) - 1):(i * `XPR_LEN)] = result[i][`XPR_LEN-1:0];
+
+			assign abs_in_1[i] = abs_input(req_in_1[(((i + 1) * `XPR_LEN) - 1):(i * `XPR_LEN)], req_in_1_signed);
+			assign abs_in_2[i] = abs_input(req_in_2[(((i + 1) * `XPR_LEN) - 1):(i * `XPR_LEN)], req_in_2_signed);
+
+			assign sign_in_1[i] = req_in_1_signed && req_in_1[((i + 1) * `XPR_LEN) - 1];
+			assign sign_in_2[i] = req_in_2_signed && req_in_2[((i + 1) * `XPR_LEN) - 1];
+
+			assign a_geq[i] = a[i] >= b[i];
+			assign result_muxed[i] = (out_sel == `MD_OUT_REM)? a[i] : result[i];
+			assign result_muxed_negated[i] = negate_output[i]? -(result_muxed[i]) : result_muxed[i];
+			assign final_result[i] = (out_sel == `MD_OUT_HI)? result_muxed_negated[i][`XPR_LEN+:`XPR_LEN] : result_muxed_negated[i][0+:`XPR_LEN];
+		end
+	endgenerate
 
 	always @(posedge clk) begin
 		if(reset) begin
@@ -101,42 +104,58 @@ module xvec2_vscale_mul_div (
 		endcase
 	end
 
+	generate
+		for(i = 0; i < `VEC_SIZE; i = i + 1) begin
+			always @(posedge clk) begin
+				case(state)
+					s_idle:
+						begin
+							if(req_valid) begin
+								result[i] <= 0;
+								a[i] <= {`XPR_LEN'b0, abs_in_1[i]};
+								b[i] <= {abs_in_2[i], `XPR_LEN'b0} >> 1;
+								negate_output[i] <= (op == `MD_OP_REM)? sign_in_1[i] : sign_in_1[i] ^ sign_in_2[i];
+							end
+						end
+					s_compute:
+						begin
+							b[i] <= b[i] >> 1;
+							if(op == `MD_OP_MUL) begin
+								if(a[i][counter])
+									result[i] <= result[i] + b[i];
+							end
+							else begin
+								b[i] <= b[i] >> 1;
+								if(a_geq[i]) begin
+									a[i] <= a[i] - b[i];
+									result[i] <= (`DOUBLE_XPR_LEN'b1 << counter) | result[i];
+								end
+							end
+						end
+					s_setup_output:
+						begin
+							result[i] <= {`XPR_LEN'b0, final_result[i]};
+						end
+				endcase
+			end
+		end
+	endgenerate
+
 	always @(posedge clk) begin
 		case(state)
 			s_idle:
 				begin
 					if(req_valid) begin
-						result <= 0;
-						a <= {`XPR_LEN'b0,abs_in_1};
-						b <= {abs_in_2,`XPR_LEN'b0} >> 1;
-						negate_output <= (op == `MD_OP_REM)? sign_in_1 : sign_in_1 ^ sign_in_2;
 						out_sel <= req_out_sel;
 						op <= req_op;
 						counter <= `XPR_LEN - 1;
 					end
-			  	end
+				end
 			s_compute:
 				begin
 					counter <= counter - 1;
-					b <= b >> 1;
-					if(op == `MD_OP_MUL) begin
-						if(a[counter]) begin
-							result <= result + b;
-						end
-					end
-					else begin
-						b <= b >> 1;
-						if(a_geq) begin
-							a <= a - b;
-							result <= (`DOUBLE_XPR_LEN'b1 << counter) | result;
-						end
-					end
-		  		end
-			s_setup_output:
-				begin
-					result <= {`XPR_LEN'b0, final_result};
 				end
 		endcase
-	end*/
+	end
 
 endmodule
