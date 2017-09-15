@@ -1,0 +1,27 @@
+- Puts 0x7000 on register 01 
+- Lots of NOPs
+- Puts 0x8000 on register 02
+- Lots of NOPs
+- Puts 0xa000 on vector register 04
+- Lots of NOPs
+- Puts 0xb000 on vector register 05
+- Lots of NOPs
+- Puts 0xc000 on vector register 06
+- Lots of NOPs
+- Puts 0xd000 on vector register 07
+- Lots of NOPs
+- Puts 0xe000 on vector register 08
+- Lots of NOPs
+- Puts 0xf000 on vector register 09
+- Lots of NOPs
+- Puts 0x1000 on vector register 10
+- Lots of NOPs
+- Puts 0x2000 on vector register 11
+- Lots of NOPs
+- r04 = r01 + 0x5
+- Lots of NOPs
+- r05 = r02 or 0x0ef
+- Lots of NOPs
+- v04 (index 16) = v01 (index 4) + 0x5
+- Lots of NOPs
+- v05 (index 20) = v02 (index 8) or 0x0ef

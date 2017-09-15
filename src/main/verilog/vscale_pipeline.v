@@ -342,12 +342,6 @@ module vscale_pipeline (
 	);
 `endif
 
-`ifdef XVEC2
-	always @(posedge clk) begin
-		$display("%b %x %b %x", xvec2_wr_reg_WB, reg_to_wr_WB, xvec2_wmask, xvec2_wb_data_WB);
-	end
-`endif
-
 	vscale_imm_gen imm_gen (
 		.inst(inst_DX),
 		.imm_type(imm_type),

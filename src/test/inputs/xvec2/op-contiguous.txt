@@ -1,0 +1,23 @@
+- Puts 0x7000 on register 01 
+- Puts 0x8000 on register 02
+- Puts 0x9000 on register 03
+- Puts 0xa000 on vector register 04
+- Puts 0xb000 on vector register 05
+- Puts 0xc000 on vector register 06
+- Puts 0xd000 on vector register 07
+- Puts 0xe000 on vector register 08
+- Puts 0xf000 on vector register 09
+- Puts 0x1000 on vector register 10
+- Puts 0x2000 on vector register 11
+- Puts 0x3000 on vector register 12
+- Puts 0x4000 on vector register 13
+- Puts 0x5000 on vector register 14
+- Puts 0x6000 on vector register 15
+- r04 = r01 + r02
+- r05 = r02 * r04
+- r06 = r04 - r01
+- r06 = r05 - r02
+- v04 (index 16) = v01 (index 4) + v02 (index 8)
+- v05 (index 20) = v02 (index 8) * v04 (index 16)
+- v06 (index 24) = v04 (index 16) - v01 (index 4)
+- v06 (index 24) = v05 (index 20) - v02 (index 8)
