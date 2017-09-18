@@ -159,7 +159,7 @@ Xvec2 has two load/store opcodes, ```XVEC2_LOAD``` and ```XVEC2_STORE```, which 
 	* **rs1:** General-purpose (```r0-r31```) register holding the load address;
 	* **func3:** Operation: LB/LH/LW/LBU/LHU;
 	* **rd:** Destination register (```r32-r63```);
-		* ```rd``` points to a single register in the vectors. Ignore the MSB when using this instruction (e.g. for ```r44```, use binary 01100 instead of 101100).
+		* ```rd``` points to a single register in the vectors. Ignore the MSB when using this instruction (e.g. for ```r44```, use binary ```01100``` instead of ```101100```).
 
 	```
 	[31:20] [19:15] [14:12] [11:7] [ 6:0 ]
@@ -169,7 +169,7 @@ Xvec2 has two load/store opcodes, ```XVEC2_LOAD``` and ```XVEC2_STORE```, which 
 * **XVEC2_STORE:**
 	* **imm:** Immediate value to be added on the address present at ```rs1```;
 	* **rs2:** Register to be stored (```r32-r63```);
-		* ```rs2``` points to a single register in the vectors. Ignore the MSB when using this instruction (e.g. for ```r44```, use binary 01100 instead of 101100);
+		* ```rs2``` points to a single register in the vectors. Ignore the MSB when using this instruction (e.g. for ```r44```, use binary ```01100``` instead of ```101100```);
 	* **rs1:** General-purpose (```r0-r31```) register holding the store address;
 	* **func3:** Operation: SB/SH/SW.
 
