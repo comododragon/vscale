@@ -1,5 +1,9 @@
 # VScale RISC-V Processor with Xvec Extension
 
+## NOTICE
+
+***This is an outdated version. You can find a less-outdated/improved version in branch xvec2***
+
 ## Author
 
 * André Bannwart Perina
